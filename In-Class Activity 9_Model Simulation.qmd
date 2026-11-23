@@ -1,0 +1,174 @@
+---
+title: "In-Class Activity 9"
+format: pdf
+author: "Kishana Balakrishnar"
+---
+
+# Packages
+```{r}
+#| output: FALSE
+library(tidyverse)
+library(parallel)
+library(tictoc)
+library(knitr)
+```
+
+# Simulation - a1=0
+```{r}
+type1_f <- function(i) {
+  set.seed(i + 2024)
+
+  n <- 500     # sample size
+  pz <- 0.2    # probability of Z = 1
+  alpha0 <- 0  # logit probability of x = 1 in non-smokers (z = 0)    
+  alpha1 <- 0  # log odds ratio of x = 1 in smokers (z = 1) vs non-smokers
+  beta0 <- -3  # logit prob of y = 1 in non-coffee drinkers (x = 0) and non-smokers (z = 0)
+  beta1 <- 0       
+  beta2 <- 2
+
+  # Generate a new dataset for this simulation
+  z <- rbinom(n, size = 1, prob = pz)
+  x <- rbinom(n, size = 1, prob = plogis(alpha0 + alpha1 * z))
+  y <- rbinom(
+    n, size = 1,
+    prob = plogis(beta0 + beta1 * x + beta2 * z)
+  )
+  dat <- data.frame(lung = y, coffee = x, smoke = z)
+
+  # Get the coffee p-value from each model
+  p_unadjusted <- coef(summary(
+    glm(lung ~ coffee, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  p_adjusted <- coef(summary(
+    glm(lung ~ coffee + smoke, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  # Return whether each model rejects the null hypothesis
+  c(unadjusted = p_unadjusted < 0.05,
+    adjusted = p_adjusted < 0.05)
+}
+
+tictoc::tic()
+
+cl <- parallel::makeCluster(5)
+sim_out <- parallel::parLapply(cl, 1:1000, type1_f)
+parallel::stopCluster(cl)
+
+type1_rates_a0 <- colMeans(do.call(rbind, sim_out))
+tictoc::toc()
+
+type1_rates_a0
+
+```
+
+# Simulation - a1=1
+```{r}
+type1_f <- function(i) {
+  set.seed(i + 2024)
+
+  n <- 500     # sample size
+  pz <- 0.2    # probability of Z = 1
+  alpha0 <- 0  # logit probability of x = 1 in non-smokers (z = 0)    
+  alpha1 <- 1  # log odds ratio of x = 1 in smokers (z = 1) vs non-smokers
+  beta0 <- -3  # logit prob of y = 1 in non-coffee drinkers (x = 0) and non-smokers (z = 0)
+  beta1 <- 0       
+  beta2 <- 2
+
+  # Generate a new dataset for this simulation
+  z <- rbinom(n, size = 1, prob = pz)
+  x <- rbinom(n, size = 1, prob = plogis(alpha0 + alpha1 * z))
+  y <- rbinom(
+    n, size = 1,
+    prob = plogis(beta0 + beta1 * x + beta2 * z)
+  )
+  dat <- data.frame(lung = y, coffee = x, smoke = z)
+
+  # Get the coffee p-value from each model
+  p_unadjusted <- coef(summary(
+    glm(lung ~ coffee, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  p_adjusted <- coef(summary(
+    glm(lung ~ coffee + smoke, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  # Return whether each model rejects the null hypothesis
+  c(unadjusted = p_unadjusted < 0.05,
+    adjusted = p_adjusted < 0.05)
+}
+
+tictoc::tic()
+
+cl <- parallel::makeCluster(5)
+sim_out <- parallel::parLapply(cl, 1:1000, type1_f)
+parallel::stopCluster(cl)
+
+type1_rates_a1 <- colMeans(do.call(rbind, sim_out))
+tictoc::toc()
+
+type1_rates_a1
+
+```
+
+# Simulation - a1=2
+```{r}
+type1_f <- function(i) {
+  set.seed(i + 2024)
+
+  n <- 500     # sample size
+  pz <- 0.2    # probability of Z = 1
+  alpha0 <- 0  # logit probability of x = 1 in non-smokers (z = 0)    
+  alpha1 <- 2  # log odds ratio of x = 1 in smokers (z = 1) vs non-smokers
+  beta0 <- -3  # logit prob of y = 1 in non-coffee drinkers (x = 0) and non-smokers (z = 0)
+  beta1 <- 0       
+  beta2 <- 2
+
+  # Generate a new dataset for this simulation
+  z <- rbinom(n, size = 1, prob = pz)
+  x <- rbinom(n, size = 1, prob = plogis(alpha0 + alpha1 * z))
+  y <- rbinom(
+    n, size = 1,
+    prob = plogis(beta0 + beta1 * x + beta2 * z)
+  )
+  dat <- data.frame(lung = y, coffee = x, smoke = z)
+
+  # Get the coffee p-value from each model
+  p_unadjusted <- coef(summary(
+    glm(lung ~ coffee, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  p_adjusted <- coef(summary(
+    glm(lung ~ coffee + smoke, data = dat, family = binomial)
+  ))["coffee", "Pr(>|z|)"]
+
+  # Return whether each model rejects the null hypothesis
+  c(unadjusted = p_unadjusted < 0.05,
+    adjusted = p_adjusted < 0.05)
+}
+
+tictoc::tic()
+
+cl <- parallel::makeCluster(5)
+sim_out <- parallel::parLapply(cl, 1:1000, type1_f)
+parallel::stopCluster(cl)
+
+type1_rates_a2 <- colMeans(do.call(rbind, sim_out))
+tictoc::toc()
+
+type1_rates_a2
+
+```
+
+# Comparison of Results
+```{r}
+#| echo: FALSE
+results_table <- data.frame(a1 = 0:2, Adjusted = c(
+    unname(type1_rates_a0[2]),
+    unname(type1_rates_a1[2]),
+    unname(type1_rates_a2[2])), Unadjusted = c(unname(type1_rates_a0[1]), unname(type1_rates_a1[1]), unname(type1_rates_a2[1])))
+
+kable(results_table, digits = 3)
+```
+
+When when a1=0, the adjusted and unadjusted models have the same p-value (0.043). Since this is below the significant level of 0.05, both models indicate a statistically significant association between drinking coffee and lung cancer. When a1 is 1 or 2, the p-values differ with the adjusted model's p-value remaining below 0.05 (statistically significant), while the unadjusted model's p-value is above 0.05 (not statistically significant). These findings suggest that when coffee consumption is associated with smoking, a potential confounder, the adjusted model should be used ot obtain a less biased estimate of the association between drinking coffee and lung cancer. 
