@@ -35,7 +35,7 @@ type1_f <- function(i) {
   )
   dat <- data.frame(lung = y, coffee = x, smoke = z)
 
-  # Get the coffee p-value from each model
+  # Getting the p-value from each model
   p_unadjusted <- coef(summary(
     glm(lung ~ coffee, data = dat, family = binomial)
   ))["coffee", "Pr(>|z|)"]
@@ -44,7 +44,6 @@ type1_f <- function(i) {
     glm(lung ~ coffee + smoke, data = dat, family = binomial)
   ))["coffee", "Pr(>|z|)"]
 
-  # Return whether each model rejects the null hypothesis
   c(unadjusted = p_unadjusted < 0.05,
     adjusted = p_adjusted < 0.05)
 }
@@ -78,10 +77,7 @@ type1_f <- function(i) {
   # Generate a new dataset for this simulation
   z <- rbinom(n, size = 1, prob = pz)
   x <- rbinom(n, size = 1, prob = plogis(alpha0 + alpha1 * z))
-  y <- rbinom(
-    n, size = 1,
-    prob = plogis(beta0 + beta1 * x + beta2 * z)
-  )
+  y <- rbinom(n, size = 1, prob = plogis(beta0 + beta1 * x + beta2 * z))
   dat <- data.frame(lung = y, coffee = x, smoke = z)
 
   # Get the coffee p-value from each model
@@ -171,4 +167,4 @@ results_table <- data.frame(a1 = 0:2, Adjusted = c(
 kable(results_table, digits = 3)
 ```
 
-When when a1=0, the adjusted and unadjusted models have the same p-value (0.043). Since this is below the significant level of 0.05, both models indicate a statistically significant association between drinking coffee and lung cancer. When a1 is 1 or 2, the p-values differ with the adjusted model's p-value remaining below 0.05 (statistically significant), while the unadjusted model's p-value is above 0.05 (not statistically significant). These findings suggest that when coffee consumption is associated with smoking, a potential confounder, the adjusted model should be used ot obtain a less biased estimate of the association between drinking coffee and lung cancer. 
+In the adjusted model, the type 1 error rate stays pretty consistent as a1 increases. However, in the unadjusted model, the type 1 error rate increases as a1 increases. This suggests that when we don't adjust for smoking, in the presence of an association between coffee consumption and smoking, then this can lead to more false positives.  
